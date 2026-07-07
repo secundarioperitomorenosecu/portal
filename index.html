@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Portal · Aplicaciones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#171E29;
+    --ink-2:#1F2A3A;
+    --ink-3:#28364A;
+    --chalk:#F3F1EA;
+    --chalk-dim:#B8C0CC;
+    --brass:#C9A15A;
+    --brass-dim:#8E7745;
+    --sage:#7C9473;
+    --rust:#B5493B;
+    --rule: rgba(243,241,234,0.12);
+    --radius: 3px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--chalk);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    background-image:
+      linear-gradient(var(--rule) 1px, transparent 1px);
+    background-size: 100% 40px;
+    background-attachment:local;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:56px 24px 80px;}
+
+  /* Header: sello institucional */
+  header{
+    display:flex; align-items:flex-end; justify-content:space-between;
+    border-bottom:2px solid var(--brass);
+    padding-bottom:20px; margin-bottom:8px;
+  }
+  .brand-eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--brass); margin:0 0 6px;
+  }
+  h1{
+    font-family:'Source Serif 4', serif;
+    font-weight:700; font-size:34px; margin:0; letter-spacing:-.01em;
+  }
+  .status-line{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px; color:var(--chalk-dim); text-align:right;
+  }
+  .status-line strong{color:var(--sage); font-weight:500;}
+
+  /* Login state */
+  #login-screen{
+    max-width:380px; margin:120px auto; text-align:center;
+  }
+  #login-screen .seal{
+    width:64px; height:64px; margin:0 auto 24px;
+    border:2px solid var(--brass); border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Source Serif 4', serif; font-size:26px; color:var(--brass);
+  }
+  #login-screen h2{
+    font-family:'Source Serif 4', serif; font-weight:600; font-size:22px; margin:0 0 8px;
+  }
+  #login-screen p{color:var(--chalk-dim); font-size:14px; margin:0 0 28px; line-height:1.5;}
+  .btn{
+    font-family:'Inter',sans-serif; font-weight:600; font-size:14px;
+    padding:12px 20px; border-radius:var(--radius); border:1px solid var(--brass);
+    background:transparent; color:var(--chalk); cursor:pointer;
+    display:inline-flex; align-items:center; gap:10px;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .btn:hover{background:rgba(201,161,90,0.12);}
+  .btn:active{transform:translateY(1px);}
+  .btn-primary{background:var(--brass); color:var(--ink); border-color:var(--brass); font-weight:600;}
+  .btn-primary:hover{background:#d8b06e;}
+  #login-error{color:var(--rust); font-size:13px; margin-top:16px; min-height:16px;}
+
+  /* Dashboard */
+  #dashboard{display:none;}
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr));
+    gap:16px; margin-top:32px;
+  }
+  .card{
+    position:relative;
+    background:var(--ink-2);
+    border:1px solid var(--ink-3);
+    border-radius:var(--radius);
+    padding:22px 20px 20px;
+    cursor:pointer;
+    text-decoration:none; color:inherit;
+    display:block;
+    transition:border-color .15s ease, transform .12s ease, background .15s ease;
+  }
+  .card:hover{border-color:var(--brass-dim); background:var(--ink-3); transform:translateY(-2px);}
+  .card:focus-visible{outline:2px solid var(--brass); outline-offset:2px;}
+  .card-top{display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:26px;}
+  .card-icon{
+    width:38px; height:38px; border-radius:50%;
+    background:var(--ink-3); border:1px solid var(--rule);
+    display:flex; align-items:center; justify-content:center;
+    font-size:17px;
+  }
+  .stamp{
+    font-family:'IBM Plex Mono', monospace; font-size:9.5px; letter-spacing:.08em; text-transform:uppercase;
+    padding:4px 8px; border-radius:20px; border:1px solid currentColor;
+  }
+  .stamp.sso{color:var(--sage);}
+  .stamp.direct{color:var(--chalk-dim); border-color:var(--rule);}
+  .card-name{
+    font-family:'Source Serif 4', serif; font-weight:600; font-size:19px; margin:0 0 4px;
+  }
+  .card-desc{font-size:12.5px; color:var(--chalk-dim); margin:0; line-height:1.4;}
+
+  .card-num{
+    position:absolute; top:20px; left:20px;
+    font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--brass-dim);
+  }
+  .card{padding-top:34px;}
+
+  footer{
+    margin-top:56px; padding-top:20px; border-top:1px solid var(--rule);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .signout{
+    background:none; border:none; color:var(--chalk-dim); font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px; cursor:pointer; letter-spacing:.05em; text-transform:uppercase;
+  }
+  .signout:hover{color:var(--rust);}
+  .foot-note{font-size:11px; color:var(--chalk-dim); font-family:'IBM Plex Mono', monospace;}
+
+  @media (prefers-reduced-motion: reduce){
+    .card{transition:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- LOGIN -->
+  <div id="login-screen">
+    <div class="seal">P</div>
+    <h2>Portal de aplicaciones</h2>
+    <p>Iniciá sesión una vez para acceder a todas tus herramientas sin volver a loguearte en cada una.</p>
+    <button class="btn btn-primary" id="google-signin" style="width:100%; justify-content:center;">Ingresar con Google</button>
+    <div id="login-error"></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard">
+    <header>
+      <div>
+        <p class="brand-eyebrow">Acceso institucional</p>
+        <h1>Mis aplicaciones</h1>
+      </div>
+      <div class="status-line">
+        Sesión activa como<br><strong id="user-email">—</strong>
+      </div>
+    </header>
+
+    <div class="grid" id="apps-grid"></div>
+
+    <footer>
+      <span class="foot-note" id="foot-note">5 aplicaciones registradas</span>
+      <button class="signout" id="signout">Cerrar sesión ↩</button>
+    </footer>
+  </div>
+
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import {
+    getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+
+  // ---------------------------------------------------------------
+  // 1) CONFIGURACIÓN: pegá acá la config del MISMO proyecto Firebase
+  //    que usás en Asistencia Docente (Project settings > SDK config)
+  // ---------------------------------------------------------------
+  const firebaseConfig = {
+    apiKey: "AIzaSyCnXlNwV63v4YOR91Y7QAYk8RuGN374zIs",
+    authDomain: "asistencia-perito.firebaseapp.com",
+    projectId: "asistencia-perito",
+    storageBucket: "asistencia-perito.firebasestorage.app",
+    messagingSenderId: "856108367645",
+    appId: "1:856108367645:web:861dc4ca918f06306e2bf4"
+  };
+
+  // URL de tu Cloud Function que emite el token de SSO (ver /functions)
+  // Se completa sola cuando desplegués la function (paso 2 del README)
+  const MINT_TOKEN_URL = "https://us-central1-asistencia-perito.cloudfunctions.net/mintSsoToken";
+
+  // ---------------------------------------------------------------
+  // 2) TUS APLICACIONES
+  //    sso:true  -> comparte el mismo proyecto Firebase, entra sin clave
+  //    sso:false -> proyecto Firebase distinto (o sin Firebase), abre directo
+  // ---------------------------------------------------------------
+  const APPS = [
+    { name:"Inscripciones Secundaria", desc:"Inscripciones nivel secundario", url:"https://secundarioperitomorenosecu.github.io/inscripciones-secundaria/", icon:"✎", sso:false },
+    { name:"Secundaria Digital", desc:"Asistencia, notas, informes EOE", url:"https://secundarioperitomorenosecu.github.io/peritodigital/", icon:"◆", sso:false },
+    { name:"Asistencia Secundaria", desc:"Ausencias nivel secundario", url:"https://secundarioperitomorenosecu.github.io/asistencia-perito/", icon:"✓", sso:true },
+    { name:"Calendario de Eventos", desc:"Eventos interniveles (acceso con PIN DIEGEP)", url:"https://peritoprimaria-stack.github.io/calendario-eventos/", icon:"◷", sso:false },
+    { name:"PM Digital Primaria", desc:"Legajo EOE y gestión nivel primario", url:"https://peritoprimaria-stack.github.io/pm-digital-primaria/", icon:"⬡", sso:false },
+    { name:"Eduausencias", desc:"Ausencias por nivel (sin login)", url:"https://cens451asistencia-collab.github.io/eduausencias/", icon:"●", sso:false },
+  ];
+
+  // ---------------------------------------------------------------
+  // 3) ACCESO RESTRINGIDO: solo estos emails pueden entrar al portal
+  // ---------------------------------------------------------------
+  const ALLOWED_EMAILS = [
+    "colegioperitomoreno.rl@gmail.com",
+    // agregá acá el resto: "sobrina@gmail.com", "coordinadora@gmail.com", etc.
+  ];
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+
+  const loginScreen = document.getElementById('login-screen');
+  const dashboard = document.getElementById('dashboard');
+  const loginError = document.getElementById('login-error');
+
+  document.getElementById('google-signin').addEventListener('click', async () => {
+    loginError.textContent = '';
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (e) {
+      loginError.textContent = 'No se pudo iniciar sesión. Probá de nuevo.';
+      console.error(e);
+    }
+  });
+
+  document.getElementById('signout').addEventListener('click', () => signOut(auth));
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      if (!ALLOWED_EMAILS.includes(user.email)) {
+        loginError.textContent = `El acceso con ${user.email} no está autorizado. Contactá al administrador.`;
+        signOut(auth);
+        return;
+      }
+      loginScreen.style.display = 'none';
+      dashboard.style.display = 'block';
+      document.getElementById('user-email').textContent = user.email || user.displayName || 'usuario';
+      renderApps(user);
+    } else {
+      loginScreen.style.display = 'block';
+      dashboard.style.display = 'none';
+    }
+  });
+
+  function renderApps(user){
+    const grid = document.getElementById('apps-grid');
+    grid.innerHTML = '';
+    document.getElementById('foot-note').textContent = `${APPS.length} aplicaciones registradas`;
+
+    APPS.forEach((appItem, i) => {
+      const card = document.createElement('a');
+      card.className = 'card';
+      card.href = '#';
+      card.innerHTML = `
+        <span class="card-num">${String(i+1).padStart(2,'0')}</span>
+        <div class="card-top">
+          <div class="card-icon">${appItem.icon}</div>
+          <span class="stamp ${appItem.sso ? 'sso' : 'direct'}">${appItem.sso ? 'Sin clave' : 'Acceso directo'}</span>
+        </div>
+        <p class="card-name">${appItem.name}</p>
+        <p class="card-desc">${appItem.desc}</p>
+      `;
+      card.addEventListener('click', async (ev) => {
+        ev.preventDefault();
+        if (appItem.sso) {
+          await openWithSso(appItem, user);
+        } else {
+          window.open(appItem.url, '_blank');
+        }
+      });
+      grid.appendChild(card);
+    });
+  }
+
+  async function openWithSso(appItem, user){
+    try {
+      const idToken = await user.getIdToken();
+      const res = await fetch(MINT_TOKEN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify({ idToken })
+      });
+      if (!res.ok) throw new Error('mint failed');
+      const { customToken } = await res.json();
+      const url = new URL(appItem.url);
+      url.hash = `sso_token=${encodeURIComponent(customToken)}`;
+      window.open(url.toString(), '_blank');
+    } catch (e) {
+      console.error(e);
+      // fallback: abrir igual, sin SSO
+      window.open(appItem.url, '_blank');
+    }
+  }
+</script>
+</body>
+</html>
