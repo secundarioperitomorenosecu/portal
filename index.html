@@ -65,9 +65,19 @@
     background:var(--surface); padding:44px 36px 36px;
     border-radius:16px; border:1px solid var(--rule);
     box-shadow:0 12px 32px rgba(58,46,46,0.06);
+    perspective:600px;
   }
   #login-screen img.crest{
     width:110px; height:auto; margin:0 auto 22px; display:block;
+    animation: spin-horizontal 6s linear infinite;
+    transform-style:preserve-3d;
+  }
+  @keyframes spin-horizontal{
+    from{ transform:rotateY(0deg); }
+    to{ transform:rotateY(360deg); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    #login-screen img.crest{ animation:none; }
   }
   #login-screen h2{
     font-family:'Source Serif 4', serif; font-weight:600; font-size:22px; margin:0 0 8px;
@@ -124,6 +134,13 @@
   .stamp.soon{color:var(--ink-dim); background:#EEE8E2;}
   .card-soon{cursor:default; opacity:.6;}
   .card-soon:hover{border-color:var(--rule); transform:none; box-shadow:none;}
+  .drag-handle{
+    position:absolute; top:16px; right:16px;
+    color:var(--ink-dim); font-size:14px; cursor:grab;
+    letter-spacing:-1px;
+  }
+  .card.dragging{opacity:.4;}
+  .card.drag-over{border-color:var(--red); background:var(--surface-tint);}
   .card-name{
     font-family:'Source Serif 4', serif; font-weight:600; font-size:18px; margin:0 0 4px;
     color:var(--ink);
@@ -237,6 +254,7 @@
     { name:"PM Digital Primaria", desc:"Legajo EOE y gestión nivel primario", url:"https://peritoprimaria-stack.github.io/pm-digital-primaria/", icon:"⬡", badge:"other", badgeText:"Con Google", sso:false },
     { name:"Eduausencias", desc:"Ausencias por nivel", url:"https://cens451asistencia-collab.github.io/eduausencias/", icon:"●", badge:"open", badgeText:"Sin login", sso:false },
     { name:"Fichaje Docente", desc:"Panel Directivo — Asistencia Docente", url:"https://precious-beignet-121b5c.netlify.app/panel.html", icon:"⏱", badge:"open", badgeText:"Acceso libre", sso:false },
+    { name:"Fichaje Docente - Personal", desc:"Registro de asistencia para docentes", url:"https://precious-beignet-121b5c.netlify.app/index.html", icon:"⏱", badge:"open", badgeText:"Sin login", sso:false },
     { name:"Encuesta Vacunación Padres", desc:"Encuesta Familias (datos en Drive Perito Primaria)", url:"https://script.google.com/macros/s/AKfycbw2GRpRePbYHlpm18dHS-Gf3dFl3Ozv1aD9xXtRELVt_mUKHoVPGt2Ajx9uXtiiil9zNQ/exec", icon:"✚", badge:"open", badgeText:"Sin login", sso:false },
     { name:"Encuesta Vacunación Panel Directivos", desc:"Encuesta Panel Directivos (datos en Drive Perito Primaria)", url:"https://script.google.com/macros/s/AKfycbw2GRpRePbYHlpm18dHS-Gf3dFl3Ozv1aD9xXtRELVt_mUKHoVPGt2Ajx9uXtiiil9zNQ/exec?page=panel", icon:"✚", badge:"open", badgeText:"Sin login", sso:false },
     { name:"Nivel Inicial", desc:"Próximamente", icon:"…", soon:true },
@@ -279,19 +297,46 @@
     }
   });
 
+  const ORDER_KEY = 'portal_app_order_v1';
+
+  function keyOf(appItem){ return appItem.url || appItem.name; }
+
+  function getOrderedApps(){
+    let saved;
+    try { saved = JSON.parse(localStorage.getItem(ORDER_KEY) || 'null'); } catch(e){ saved = null; }
+    if (!saved || !Array.isArray(saved)) return APPS.slice();
+
+    const byKey = new Map(APPS.map(a => [keyOf(a), a]));
+    const ordered = [];
+    saved.forEach(k => { if (byKey.has(k)) { ordered.push(byKey.get(k)); byKey.delete(k); } });
+    // agregar al final cualquier app nueva que no estaba guardada todavía
+    byKey.forEach(a => ordered.push(a));
+    return ordered;
+  }
+
+  function saveOrder(orderedApps){
+    try { localStorage.setItem(ORDER_KEY, JSON.stringify(orderedApps.map(keyOf))); } catch(e){}
+  }
+
   function renderApps(user){
     const grid = document.getElementById('apps-grid');
     grid.innerHTML = '';
-    document.getElementById('foot-note').textContent = `${APPS.length} aplicaciones registradas`;
+    document.getElementById('foot-note').textContent = `${APPS.length} aplicaciones registradas · mantené presionada una tarjeta para reordenar`;
 
-    APPS.forEach((appItem, i) => {
+    let ordered = getOrderedApps();
+    let dragFromIndex = null;
+
+    ordered.forEach((appItem, i) => {
       const card = document.createElement('a');
       card.className = 'card' + (appItem.soon ? ' card-soon' : '');
       card.href = '#';
+      card.draggable = true;
+      card.dataset.index = i;
       const stamp = appItem.soon
         ? `<span class="stamp soon">Próximamente</span>`
         : `<span class="stamp ${appItem.badge}">${appItem.badgeText}</span>`;
       card.innerHTML = `
+        <span class="drag-handle" title="Arrastrar para reordenar">⠿</span>
         <span class="card-num">${String(i+1).padStart(2,'0')}</span>
         <div class="card-top">
           <div class="card-icon">${appItem.icon}</div>
@@ -312,6 +357,33 @@
       } else {
         card.addEventListener('click', (ev) => ev.preventDefault());
       }
+
+      card.addEventListener('dragstart', (ev) => {
+        dragFromIndex = i;
+        card.classList.add('dragging');
+        ev.dataTransfer.effectAllowed = 'move';
+      });
+      card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+      });
+      card.addEventListener('dragover', (ev) => {
+        ev.preventDefault();
+        card.classList.add('drag-over');
+      });
+      card.addEventListener('dragleave', () => {
+        card.classList.remove('drag-over');
+      });
+      card.addEventListener('drop', (ev) => {
+        ev.preventDefault();
+        card.classList.remove('drag-over');
+        const dropIndex = Number(card.dataset.index);
+        if (dragFromIndex === null || dragFromIndex === dropIndex) return;
+        const moved = ordered.splice(dragFromIndex, 1)[0];
+        ordered.splice(dropIndex, 0, moved);
+        saveOrder(ordered);
+        renderApps(user);
+      });
+
       grid.appendChild(card);
     });
   }
