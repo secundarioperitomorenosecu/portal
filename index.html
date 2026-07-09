@@ -121,6 +121,9 @@
   .stamp.lock{color:#8A5A22; background:var(--amber-pastel);}
   .stamp.open{color:#4C6B3C; background:var(--sage-pastel);}
   .stamp.other{color:#3E6478; background:var(--sky-pastel);}
+  .stamp.soon{color:var(--ink-dim); background:#EEE8E2;}
+  .card-soon{cursor:default; opacity:.6;}
+  .card-soon:hover{border-color:var(--rule); transform:none; box-shadow:none;}
   .card-name{
     font-family:'Source Serif 4', serif; font-weight:600; font-size:18px; margin:0 0 4px;
     color:var(--ink);
@@ -232,6 +235,8 @@
     { name:"Calendario de Eventos", desc:"Eventos interniveles", url:"https://peritoprimaria-stack.github.io/calendario-eventos/", icon:"◷", badge:"other", badgeText:"Con PIN", sso:false },
     { name:"PM Digital Primaria", desc:"Legajo EOE y gestión nivel primario", url:"https://peritoprimaria-stack.github.io/pm-digital-primaria/", icon:"⬡", badge:"other", badgeText:"Con Google", sso:false },
     { name:"Eduausencias", desc:"Ausencias por nivel", url:"https://cens451asistencia-collab.github.io/eduausencias/", icon:"●", badge:"open", badgeText:"Sin login", sso:false },
+    { name:"Fichaje Docente", desc:"Panel Directivo — Asistencia Docente", url:"https://moonlit-jalebi-9004e4.netlify.app/panel.html", icon:"⏱", badge:"open", badgeText:"Acceso libre", sso:false },
+    { name:"Nivel Inicial", desc:"Próximamente", icon:"…", soon:true },
   ];
 
   const app = initializeApp(firebaseConfig);
@@ -278,25 +283,32 @@
 
     APPS.forEach((appItem, i) => {
       const card = document.createElement('a');
-      card.className = 'card';
+      card.className = 'card' + (appItem.soon ? ' card-soon' : '');
       card.href = '#';
+      const stamp = appItem.soon
+        ? `<span class="stamp soon">Próximamente</span>`
+        : `<span class="stamp ${appItem.badge}">${appItem.badgeText}</span>`;
       card.innerHTML = `
         <span class="card-num">${String(i+1).padStart(2,'0')}</span>
         <div class="card-top">
           <div class="card-icon">${appItem.icon}</div>
-          <span class="stamp ${appItem.badge}">${appItem.badgeText}</span>
+          ${stamp}
         </div>
         <p class="card-name">${appItem.name}</p>
         <p class="card-desc">${appItem.desc}</p>
       `;
-      card.addEventListener('click', async (ev) => {
-        ev.preventDefault();
-        if (appItem.sso) {
-          await openWithSso(appItem, user);
-        } else {
-          window.open(appItem.url, '_blank');
-        }
-      });
+      if (!appItem.soon) {
+        card.addEventListener('click', async (ev) => {
+          ev.preventDefault();
+          if (appItem.sso) {
+            await openWithSso(appItem, user);
+          } else {
+            window.open(appItem.url, '_blank');
+          }
+        });
+      } else {
+        card.addEventListener('click', (ev) => ev.preventDefault());
+      }
       grid.appendChild(card);
     });
   }
